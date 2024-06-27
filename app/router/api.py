@@ -52,7 +52,6 @@ async def get_user_library(user: str):
 async def get_keys(user: str, filename: str):
     try:
         file_data = s3.get_object(Bucket=BUCKET, Key=f"{user}/keys/{filename}.json")
-
         json_data = json.loads(file_data["Body"].read())
         
         return json_data
