@@ -15,6 +15,9 @@ from services.spec_handler import extract_keys_from_spec
 router = APIRouter()
 
 # set the name of your bucket
+BUCKET = "keystone-bucket"
+
+s3 = boto3.client('s3')
 
 @router.post("/presigned-url")
 async def create_presigned_url(user: str, filename: str, method: str) -> Dict[str, str]:
