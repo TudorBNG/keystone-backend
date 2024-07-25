@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 import fitz
 import collections
 import boto3
@@ -10,7 +10,7 @@ from typing import Dict
 
 from services.helper import map_sections_to_page
 
-from services.spec_handler import extract_keys_from_spec
+from services.spec_handler import extract_keys_from_spec, extract_keys_from_spec_from_general_contractor, extract_keys_from_spec_electrical_contractor
 
 router = APIRouter()
 
@@ -70,7 +70,7 @@ async def save_keys(user: str, filename: str, keys: str = Form(...)):
     return JSONResponse(content={"message":"Keys have been saved"}, status_code=200)
 
 @router.post("/extract-keys")
-async def extract_keys(user: str, filename: str):
+async def extract_keys(user: str, filename: str, division: str):
     try:
         path = f"{user}/specs/{filename}"
         
@@ -79,7 +79,13 @@ async def extract_keys(user: str, filename: str):
         file_stream = file_data["Body"].read()
         spec = fitz.open(stream=file_stream, filetype="pdf")
 
-        keys = extract_keys_from_spec(spec)
+        if division == '1':
+
+            keys = extract_keys_from_spec_from_general_contractor(spec)
+        elif division == '26':
+            keys = extract_keys_from_spec_electrical_contractor(spec)
+        else:
+            keys = extract_keys_from_spec(spec)
 
         spec.close()
 
@@ -127,4 +133,46 @@ async def get_sections(user: str, filename: str):
         return {"message": f"Spec not found in S3: {filename}"}
     except Exception as error:
         return {"message": f"Error accessing S3: {str(error)}"}
-         
+
+
+
+
+# Endpoint to submit comments
+@router.post("/submit-comment")
+async def submit_comment(user: str, filename: str, comment: str = Form(...)):
+    path = f"{user}/comments/{filename}.json"
+
+    try:
+        # Fetch existing comments
+        try:
+            existing_comments_data = s3.get_object(Bucket=BUCKET, Key=path)
+            existing_comments = json.loads(existing_comments_data["Body"].read())
+        except s3.exceptions.NoSuchKey:
+            existing_comments = []
+
+        # Append new comment
+        existing_comments.append(comment)
+
+        # Save updated comments back to S3
+        s3.put_object(Bucket=BUCKET, Key=path, Body=json.dumps(existing_comments))
+
+        return JSONResponse(content={"message": "Comment submitted successfully"}, status_code=200)
+
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Error submitting comment: {str(error)}")
+
+
+# Example: Endpoint to get comments
+@router.get("/comments")
+async def get_comments(user: str, filename: str):
+    path = f"{user}/comments/{filename}.json"
+
+    try:
+        comments_data = s3.get_object(Bucket=BUCKET, Key=path)
+        comments = json.loads(comments_data["Body"].read())
+        return comments
+
+    except s3.exceptions.NoSuchKey:
+        return {"comments": []}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Error fetching comments: {str(error)}")
