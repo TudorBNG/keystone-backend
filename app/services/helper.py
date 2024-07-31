@@ -5,21 +5,50 @@ import numpy as np
 
 
 section_regex = [
-    "[0-9][0-9][0-9][0-9][0-9]"
-    "[0-9][0-9][0-9][0-9][0-9][0-9]",
-    "[0-9][0-9] [0-9][0-9][0-9][0-9]",
-    "[0-9][0-9] [0-9][0-9] [0-9][0-9]",
+    # "[0-9][0-9][0-9][0-9]00"
+    # "[0-9][0-9][0-9][0-9]00",
+    # "[0-9][0-9] [0-9][0-9]00",
+    # "[0-9][0-9] [0-9][0-9] 00",
+    "[0-9]{6}\ \-\ [0-9]{1}",
+    "[0-9][0-9]\ [0-9][0-9]\ [0-9][0-9]\ \-\ [0-9]{1}",
 ]
 
-def map_sections_to_page(text, page_num, section_candidates):
-    sliced_text = text[-3:][::-1]
+# remove the ending of the section, replace spaces and add 2 zeroes at the end
+def trim_section(section: str):
+    return re.sub(r'\-[0-9]{1}', '', section.replace(' ', ''))[:4] + '00'
+
+
+# format the sections, remove duplicates and sort them
+def sections_parser(sections):
+    trimmed_sections = list(map(trim_section, sections))
+    unique_sections = list(dict.fromkeys(trimmed_sections))
+    unique_sections.sort()
+
+    return unique_sections
+
+
+# in the PDF's text, find all sections that match the pattern
+def find_sections_in_page(text):
+    temp_list = []
+    for pattern in section_regex:
+        discovered_match = re.findall(pattern, text)
+        
+        if discovered_match:
+            temp_list += discovered_match
+
+    return temp_list
+
+# extract the sections --- DEPRECATED
+def map_sections_to_page(sliced_text, page_num, section_candidates):
     for block in sliced_text: 
         line = block[4]
         for pattern in section_regex: 
             discovered_match = re.findall(pattern, line)
             if discovered_match:
-                section_candidates[page_num] += discovered_match
-
+                if hasattr(section_candidates, str(page_num)):
+                    section_candidates[page_num] += discovered_match
+                else:
+                    section_candidates[page_num] = [discovered_match]
     return section_candidates
 
 def normalize_section(section):

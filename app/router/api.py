@@ -8,7 +8,7 @@ import json
 import numpy as np
 from typing import Dict
 
-from services.helper import map_sections_to_page
+from services.helper import find_sections_in_page, sections_parser
 
 from services.spec_handler import extract_keys_from_spec
 
@@ -100,31 +100,72 @@ async def get_sections(user: str, filename: str):
 
         result_file = s3.get_object(Bucket=BUCKET, Key=path)
         
-        file_stream = result_file.Body.read()
+        file_stream = result_file["Body"].read()
 
         spec = fitz.open(stream=file_stream, filetype="pdf")
 
-        sections_number = collections.defaultdict(int)
+        sections_list = {}
 
-        current_section_area = collections.defaultdict(int)
+        aggregated_sections = []
 
-        page_section_map = {}
+        for page_number, page in enumerate(spec):
+            page_text = page.get_text()
+            page_sections = find_sections_in_page(page_text)
+            
+            parsed_page_sections = list(filter(lambda x : x not in aggregated_sections, sections_parser(page_sections)))
 
-        for i, page in enumerate(spec):
-            text = page.get_text("blocks", sort=True)
-            page_section_map = map_sections_to_page(text, i, page_section_map)
+            if len(parsed_page_sections) < 5 and parsed_page_sections:
+                for parsed_section in parsed_page_sections:
+                    sections_list[parsed_section] = page_number
+                aggregated_sections += parsed_page_sections
 
-            if len(page_section_map[i]):
-                section = page_section_map[i][0]
-                sections_number[section] += 1
-                
-                if section not in current_section_area:
-                    current_section_area[section] = i+1
-
-        return {key: value for key, value in current_section_area.items() if sections_number(key) > 5}
+        return sections_list
 
     except s3.exceptions.NoSuchKey:
         return {"message": f"Spec not found in S3: {filename}"}
     except Exception as error:
-        return {"message": f"Error accessing S3: {str(error)}"}
+        return {"message": f"Error accessing S3: {error}"}
+         
+
+    
+
+### DEPRECATED
+# async def get_sections(user: str, filename: str):
+#     try:
+#         path = f"{user}/specs/{filename}"
+
+#         result_file = s3.get_object(Bucket=BUCKET, Key=path)
+        
+#         file_stream = result_file["Body"].read()
+
+#         spec = fitz.open(stream=file_stream, filetype="pdf")
+
+#         sections_number = collections.defaultdict(int)
+
+#         current_section_area = collections.defaultdict(int)
+
+#         page_section_map = {}
+
+#         print('Starts processing the spec')
+
+#         for i, page in enumerate(spec):
+
+#             text = page.get_text("blocks", sort=True)
+#             page_section_map = map_sections_to_page(text, i, page_section_map)
+
+#             if len(page_section_map) and len(page_section_map[i]):
+#                 section = page_section_map[i][0]
+
+#                 # sections_number[section] += 1 
+
+#                 if section not in current_section_area:
+#                     current_section_area[section] = i+1
+
+#         # return {key: value for key, value in current_section_area.items() if sections_number(key) > 5}
+#         return {key: value for key, value in current_section_area.items()}
+
+#     except s3.exceptions.NoSuchKey:
+#         return {"message": f"Spec not found in S3: {filename}"}
+#     except Exception as error:
+#         return {"message": f"Error accessing S3: {error}"}
          
