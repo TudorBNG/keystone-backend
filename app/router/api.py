@@ -1,21 +1,24 @@
 from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse, FileResponse
 import fitz
-import collections
 import boto3
 from botocore.client import Config
 import json
 import numpy as np
 from typing import Dict
+from dotenv import load_dotenv
+import os
 
 from services.helper import find_sections_in_page, sections_parser
 
 from services.spec_handler import extract_keys_from_spec
 
+load_dotenv()
+
 router = APIRouter()
 
 # set the name of your bucket
-BUCKET = "keystone-bucket"
+BUCKET = os.environ.get('BUCKET') or "keystone-bucket"
 
 s3 = boto3.client('s3')
 
