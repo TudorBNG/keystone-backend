@@ -89,9 +89,8 @@ async def extract_keys(user: str, filename: str, division: str):
 
         spec.close()
 
-        keys['label'] = np.random.choice(["Additional Cost", "Deliverable", "None"], size=len(keys))
-
-        return keys.to_json()
+        if keys:
+            return keys.to_json
 
     except Exception as exception:
         return JSONResponse(content={"error": f"Error on extracting the keys: {str(exception)}"}, status_code=500)

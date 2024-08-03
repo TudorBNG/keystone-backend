@@ -91,7 +91,7 @@ def read_and_filter_blocks(blocks):
     for block in blocks:
         if keyword_in_text(block.lower().translate(str.maketrans('', '', string.punctuation)), KEYWORDS):
             blocks_filtered.append(block)
-
+    return blocks_filtered
 
 def parse_data(test_df, train_data, model, sections):
     section_prediction_df = {}
