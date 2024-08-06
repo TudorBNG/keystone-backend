@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from helper import *
+from .helper import *
 
 from sentence_transformers import SentenceTransformer
 
@@ -36,7 +36,7 @@ AVAILABLE_SECTIONS = ['011000',
                       '019100']
 
 
-def extract_keys_from_spec(spec, sections=None, score=0.2, six_digit_sections=False):
+def extract_keys_from_spec(spec, sections=None, score=0.7, six_digit_sections=False):
     if sections is None:
         sections = AVAILABLE_SECTIONS
     train_data = pd.read_parquet("train_data.parquet")
