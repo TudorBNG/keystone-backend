@@ -178,16 +178,15 @@ def extract_keys_from_spec_from_general_contractor(spec_title, spec, score=0.6, 
     if test_scores:
         # Convert the scores to a DataFrame
         prediction_df = pd.DataFrame(test_scores)
-        # print('reached here')
+
         # Filter rows where the prediction score is greater than the delete score
         prediction_df = prediction_df[prediction_df.score > prediction_df.delete_score]
-        # print('reached here 2')
+
         # Further filter rows to include only those with a delete score less than 0.5
         prediction_df = prediction_df[prediction_df.delete_score < 0.5]
-        # print('reached here 3')
+
         # Add the specification title as a new column
         prediction_df['spec'] = os.path.basename(spec_title)
-        # print(prediction_df.head(3))
         prediction_df_list = prediction_df.to_dict(orient='list')
         return prediction_df_list
 
