@@ -73,7 +73,7 @@ async def save_keys(user: str, filename: str, keys: str = Form(...)):
     return JSONResponse(content={"message":"Keys have been saved"}, status_code=200)
 
 @router.post("/extract-keys")
-async def extract_keys(user: str, filename: str, division: str):
+async def extract_keys(user: str, filename: str, division: str, group: str):
     try:
         path = f"{user}/specs/{filename}"
         
@@ -84,9 +84,9 @@ async def extract_keys(user: str, filename: str, division: str):
 
         if division == '1':
 
-            keys = extract_keys_from_spec_from_general_contractor(spec)
+            keys = extract_keys_from_spec_from_general_contractor(filename, spec, group)
         elif division == '26':
-            keys = extract_keys_from_spec_electrical_contractor(spec)
+            keys = extract_keys_from_spec_electrical_contractor(filename, spec)
         else:
             keys = extract_keys_from_spec(spec)
             # keep as temp strictly for this case
@@ -96,7 +96,7 @@ async def extract_keys(user: str, filename: str, division: str):
         spec.close()
 
         if keys:
-            return keys.to_json
+            return json.dumps(keys)
 
     except Exception as exception:
         return JSONResponse(content={"error": f"Error on extracting the keys: {str(exception)}"}, status_code=500)

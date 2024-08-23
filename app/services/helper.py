@@ -120,8 +120,7 @@ def keyword_in_text(text, keywords):
     return False
 
 
-def read_and_filter_blocks(blocks):
-    KEYWORDS = ['security']
+def read_and_filter_blocks(blocks, KEYWORDS):
     blocks_filtered = []
     for block in blocks:
         if keyword_in_text(block.lower().translate(str.maketrans('', '', string.punctuation)), KEYWORDS):
@@ -256,10 +255,12 @@ def extract_division_26_blocks(pdf_path):
     return list(section_26_blocks)
 
 
-def extract_division_1_blocks(pdf_path, section):
+def extract_division_1_blocks(spec, section):
     section_01_blocks = set()
     section_01_blocks_df = []
-    doc = fitz.open(pdf_path)
+    doc = spec
+
+    # print(doc.page_count)
 
     current_sections = []
     for page_num in range(doc.page_count):
@@ -271,7 +272,7 @@ def extract_division_1_blocks(pdf_path, section):
         header_text = page.get_text("text", clip=header_region).strip()
         footer_region = fitz.Rect(0, page_height - 100, page.rect.width, page_height)
         footer_text = page.get_text("text", clip=footer_region)
-
+        # print(header_text, footer_text)
         if section in header_text.replace(' ', '') or section in footer_text.replace(' ', ''):
             # print('reached here')
             blocks = page.get_text("blocks")
