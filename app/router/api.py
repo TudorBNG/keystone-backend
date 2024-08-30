@@ -85,13 +85,14 @@ async def extract_keys(user: str, filename: str, division: str):
         if division == '1':
 
             keys = extract_keys_from_spec_from_general_contractor(filename, spec)
-
-            keys = [{'text': t, 'quads': q, 'section': s, 'group': g, 'score': ms, 'spec':sp} for t, q, s, g, ms, sp in zip(keys['text'], keys['quads'], keys['section'], keys['group'], keys['score'], keys['spec'])]
+            keys['label'] = np.random.choice(["Additional Cost", "Deliverable", "None"], size=len(keys))
+            keys = [{'text': t, 'quads': q, 'section': s, 'group': g, 'score': ms, 'spec':sp, 'label': l} for t, q, s, g, ms, sp, l in zip(keys['text'], keys['quads'], keys['section'], keys['group'], keys['score'], keys['spec'], keys['label'])]
             # keys['label'] = np.random.choice(["Additional Cost", "Deliverable", "None"], size=len(keys))
         elif division == '26':
             keys = extract_keys_from_spec_electrical_contractor(filename, spec)
-            keys = [{'text': t, 'quads': q, 'section': s, 'group': g, 'score': ms, 'spec': sp} for t, q, s, g, ms, sp in
-                    zip(keys['text'], keys['quads'], keys['section'], keys['group'], keys['score'], keys['spec'])]
+            keys['label'] = np.random.choice(["Additional Cost", "Deliverable", "None"], size=len(keys))
+            keys = [{'text': t, 'quads': q, 'section': s, 'group': g, 'score': ms, 'spec': sp, 'label': l} for t, q, s, g, ms, sp, l in
+                    zip(keys['text'], keys['quads'], keys['section'], keys['group'], keys['score'], keys['spec'], keys['label'])]
         else:
             keys = extract_keys_from_spec(spec)
             # keep as temp strictly for this case
