@@ -73,7 +73,7 @@ async def save_keys(user: str, filename: str, keys: str = Form(...)):
     return JSONResponse(content={"message":"Keys have been saved"}, status_code=200)
 
 @router.post("/extract-keys")
-async def extract_keys(user: str, filename: str, division: str, group: str):
+async def extract_keys(user: str, filename: str, division: str):
     try:
         path = f"{user}/specs/{filename}"
         
@@ -84,9 +84,14 @@ async def extract_keys(user: str, filename: str, division: str, group: str):
 
         if division == '1':
 
-            keys = extract_keys_from_spec_from_general_contractor(filename, spec, group)
+            keys = extract_keys_from_spec_from_general_contractor(filename, spec)
+
+            keys = [{'text': t, 'quads': q, 'section': s, 'group': g, 'score': ms, 'spec':sp} for t, q, s, g, ms, sp in zip(keys['text'], keys['quads'], keys['section'], keys['group'], keys['score'], keys['spec'])]
+            # keys['label'] = np.random.choice(["Additional Cost", "Deliverable", "None"], size=len(keys))
         elif division == '26':
             keys = extract_keys_from_spec_electrical_contractor(filename, spec)
+            keys = [{'text': t, 'quads': q, 'section': s, 'group': g, 'score': ms, 'spec': sp} for t, q, s, g, ms, sp in
+                    zip(keys['text'], keys['quads'], keys['section'], keys['group'], keys['score'], keys['spec'])]
         else:
             keys = extract_keys_from_spec(spec)
             # keep as temp strictly for this case
@@ -187,37 +192,37 @@ async def get_comments(user: str, filename: str):
 # async def get_sections(user: str, filename: str):
 #     try:
 #         path = f"{user}/specs/{filename}"
-
+#
 #         result_file = s3.get_object(Bucket=BUCKET, Key=path)
-        
+#
 #         file_stream = result_file["Body"].read()
-
+#
 #         spec = fitz.open(stream=file_stream, filetype="pdf")
-
+#
 #         sections_number = collections.defaultdict(int)
-
+#
 #         current_section_area = collections.defaultdict(int)
-
+#
 #         page_section_map = {}
-
+#
 #         print('Starts processing the spec')
-
+#
 #         for i, page in enumerate(spec):
-
+#
 #             text = page.get_text("blocks", sort=True)
 #             page_section_map = map_sections_to_page(text, i, page_section_map)
-
+#
 #             if len(page_section_map) and len(page_section_map[i]):
 #                 section = page_section_map[i][0]
-
-#                 # sections_number[section] += 1 
-
+#
+#                 # sections_number[section] += 1
+#
 #                 if section not in current_section_area:
 #                     current_section_area[section] = i+1
-
+#
 #         # return {key: value for key, value in current_section_area.items() if sections_number(key) > 5}
 #         return {key: value for key, value in current_section_area.items()}
-
+#
 #     except s3.exceptions.NoSuchKey:
 #         return {"message": f"Spec not found in S3: {filename}"}
 #     except Exception as error:

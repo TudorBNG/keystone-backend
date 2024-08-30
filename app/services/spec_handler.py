@@ -35,7 +35,10 @@ AVAILABLE_SECTIONS = ['011000',
                       '017300',
                       '019100']
 
-KEYWORDS = {'security': ['security'], 'leed': ['leed'], 'shutdown': ['shut down','shut-down','shutdown'], 'parking': ['parking']}
+KEYWORDS = {'security': ['security'], 'leed': ['leed'], 'shutdown': ['shut down', 'shut-down', 'shutdown'],
+            'parking': ['parking'], 'permit': ['permit']}
+
+
 def extract_keys_from_spec(spec, sections=None, score=0.7, six_digit_sections=False):
     if sections is None:
         sections = AVAILABLE_SECTIONS
@@ -76,17 +79,17 @@ def extract_keys_from_spec_electrical_contractor(spec_title, spec, score=0.6):
     pd.DataFrame: A DataFrame containing the filtered prediction scores, the highlights and the specification title.
     """
     # Paths to the training data CSV files for division 26
-    final_train_data_path = 'training_data/final_train_data_division_26.csv'
+    final_train_data_path = 'services/training_data/final_train_data_division_26.csv'
     final_train_data = pd.read_csv(final_train_data_path)
 
-    final_group_train_data_path = 'training_data/final_group_train_data_division_26.csv'
+    final_group_train_data_path = 'services/training_data/final_group_train_data_division_26.csv'
     final_group_train_data = pd.read_csv(final_group_train_data_path)
 
-    delete_train_data_path = 'training_data/delete_train_data_division_26.csv'
+    delete_train_data_path = 'services/training_data/delete_train_data_division_26.csv'
     delete_train_data = pd.read_csv(delete_train_data_path)
 
     # Extract text blocks from the specification document specific to electrical contractors
-    text_blocks = extract_division_26_blocks(spec_title)
+    text_blocks = extract_division_26_blocks(spec)
     texts_to_classify = text_blocks
 
     # Load the pre-trained SentenceTransformer model
@@ -106,7 +109,7 @@ def extract_keys_from_spec_electrical_contractor(spec_title, spec, score=0.6):
         return prediction_df
 
 
-def extract_keys_from_spec_from_general_contractor(spec_title, spec, score=0.6, group='security'):
+def extract_keys_from_spec_from_general_contractor(spec_title, spec, score=0.6):
     """
     Extracts key blocks from a specification document provided by a general contractor.
 
@@ -119,56 +122,53 @@ def extract_keys_from_spec_from_general_contractor(spec_title, spec, score=0.6, 
     pd.DataFrame: A DataFrame containing the filtered prediction scores, the highlights and the specification title.
     """
     # Paths to the final and delete training data CSV files
-    final_train_data_path = 'training_data/final_train_data_division_1.csv'
+    final_train_data_path = 'services/training_data/final_train_data_division_1.csv'
     final_train_data = pd.read_csv(final_train_data_path)
-    delete_train_data_path = 'training_data/delete_train_data_division_1.csv'
+    delete_train_data_path = 'services/training_data/delete_train_data_division_1.csv'
     delete_train_data = pd.read_csv(delete_train_data_path)
 
     # Initialize an empty list to store text blocks
     text_blocks = []
 
     # Check if the group is 'security' and extract relevant sections
-    if group == 'security':
-        for section in ['011400', '011419', '013528', '015200']:
-            # Extract text blocks from the specified sections of the specification
-            extracted_blocks = extract_division_1_blocks(spec, section)
-            if extracted_blocks:
-                text_blocks += extracted_blocks
-    # Check if the group is 'leed' and extract relevant sections
-    elif group == 'leed':
-        for section in ['015100']:
-            # Extract text blocks from the specified sections of the specification
-            extracted_blocks = extract_division_1_blocks(spec, section)
-            if extracted_blocks:
-                text_blocks += extracted_blocks
+    for section in ['011400', '011419', '013528', '015200']:
+        # Extract text blocks from the specified sections of the specification
+        extracted_blocks = extract_division_1_blocks(spec, section, 'security')
+        if extracted_blocks:
+            text_blocks += extracted_blocks
 
     # Check if the group is 'leed' and extract relevant sections
-    elif group == 'shutdown':
-        for section in ['011100','013528','013546','011419']:
-            # Extract text blocks from the specified sections of the specification
-            extracted_blocks = extract_division_1_blocks(spec, section)
-            if extracted_blocks:
-                text_blocks += extracted_blocks
+    for section in ['015100']:
+        # Extract text blocks from the specified sections of the specification
+        extracted_blocks = extract_division_1_blocks(spec, section, 'leed')
+        # print(extracted_blocks)
+        if extracted_blocks:
+            text_blocks += extracted_blocks
 
     # Check if the group is 'leed' and extract relevant sections
-    elif group == 'parking':
-        for section in ['015200', '015526', '011419', '011100']:
-            # Extract text blocks from the specified sections of the specification
-            extracted_blocks = extract_division_1_blocks(spec, section)
-            if extracted_blocks:
-                text_blocks += extracted_blocks
+    for section in ['011100', '013528', '013546', '011419']:
+        # Extract text blocks from the specified sections of the specification
+        extracted_blocks = extract_division_1_blocks(spec, section, 'shutdown')
+        if extracted_blocks:
+            text_blocks += extracted_blocks
 
     # Check if the group is 'leed' and extract relevant sections
-    elif group == 'permit':
-        for section in ['010146', '013100', '015526', '014100','011813']:
-            # Extract text blocks from the specified sections of the specification
-            extracted_blocks = extract_division_1_blocks(spec, section)
-            if extracted_blocks:
-                text_blocks += extracted_blocks
+    for section in ['015200', '015526', '011419', '011100']:
+        # Extract text blocks from the specified sections of the specification
+        extracted_blocks = extract_division_1_blocks(spec, section, 'parking')
+        if extracted_blocks:
+            text_blocks += extracted_blocks
 
+    # Check if the group is 'leed' and extract relevant sections
+    for section in ['010146', '013100', '015526', '014100', '011813']:
+        # Extract text blocks from the specified sections of the specification
+        extracted_blocks = extract_division_1_blocks(spec, section, 'permit')
+        if extracted_blocks:
+            text_blocks += extracted_blocks
+    # print(text_blocks)
     # Filter and prepare the text blocks for classification
-    texts_to_classify = read_and_filter_blocks(text_blocks,KEYWORDS[group])
-
+    texts_to_classify = read_and_filter_blocks(text_blocks, KEYWORDS)
+    # print(texts_to_classify)
     # Load the pre-trained SentenceTransformer model
     model = SentenceTransformer("all-MiniLM-L6-v2", cache_folder="model/tmp/")
 
@@ -189,5 +189,3 @@ def extract_keys_from_spec_from_general_contractor(spec_title, spec, score=0.6, 
         prediction_df['spec'] = os.path.basename(spec_title)
         prediction_df_list = prediction_df.to_dict(orient='list')
         return prediction_df_list
-
-

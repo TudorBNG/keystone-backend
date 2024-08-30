@@ -21,6 +21,7 @@ key_extraction_section_regex = [
     "[0-9][0-9][0-9][0-9][0-9]"
 ]
 
+
 # remove the ending of the section, replace spaces and add 2 zeroes at the end
 def trim_section(section: str):
     return re.sub(r'\-[0-9]{1}', '', section.replace(' ', ''))[:4] + '00'
@@ -40,11 +41,12 @@ def find_sections_in_page(text):
     temp_list = []
     for pattern in section_extraction_regex:
         discovered_match = re.findall(pattern, text)
-        
+
         if discovered_match:
             temp_list += discovered_match
 
     return temp_list
+
 
 # extract the sections for the keys
 def map_sections_to_page(sliced_text, page_num, section_candidates):
@@ -120,12 +122,14 @@ def keyword_in_text(text, keywords):
     return False
 
 
-def read_and_filter_blocks(blocks, KEYWORDS):
+def read_and_filter_blocks(blocks, keywords):
     blocks_filtered = []
     for block in blocks:
-        if keyword_in_text(block.lower().translate(str.maketrans('', '', string.punctuation)), KEYWORDS):
+        # print(block[1])
+        if keyword_in_text(block[3].lower().translate(str.maketrans('', '', string.punctuation)), keywords[block[1]]):
             blocks_filtered.append(block)
     return blocks_filtered
+
 
 def parse_data(test_df, train_data, model, sections):
     section_prediction_df = {}
@@ -165,8 +169,8 @@ def parse_data_electrical_contractor(test_data, train_data, group_train_data, de
     group_train_model_embed = model.encode(group_train_data_sentences, convert_to_tensor=True)
 
     for text in test_data:
-        if len(text):
-            predict_model_embed = model.encode(text, convert_to_tensor=True)
+        if len(text[2]):
+            predict_model_embed = model.encode(text[2], convert_to_tensor=True)
             scores = util.cos_sim(predict_model_embed, train_model_embed)
             scores_np = np.array(scores.cpu())
             max_score = scores_np.max()
@@ -178,9 +182,11 @@ def parse_data_electrical_contractor(test_data, train_data, group_train_data, de
             closest_match_group = group_train_data.iloc[max_index]["Group"]
 
             predictions.append({
-                'text': text,
-                'score': max_score,
-                'group': closest_match_group
+                'text': text[2],
+                'quads': text[1],
+                'section': '26051',
+                'group': closest_match_group,
+                'score': max_score
             })
 
     return predictions
@@ -196,8 +202,8 @@ def parse_data_general_contractor(test_data, train_data, delete_train_data, mode
     delete_train_model_embed = model.encode(delete_train_data_sentences, convert_to_tensor=True)
 
     for text in test_data:
-        if len(text):
-            predict_model_embed = model.encode(text, convert_to_tensor=True)
+        if len(text[3]):
+            predict_model_embed = model.encode(text[3], convert_to_tensor=True)
             scores = util.cos_sim(predict_model_embed, train_model_embed)
             scores_np = np.array(scores.cpu())
             max_score = scores_np.max()
@@ -206,7 +212,10 @@ def parse_data_general_contractor(test_data, train_data, delete_train_data, mode
             delete_max_score = np.array(delete_scores.cpu()).max()
 
             predictions.append({
-                'text': text,
+                'text': text[3],
+                'quads': text[2],
+                'section': text[0],
+                'group': text[1],
                 'score': max_score,
                 'delete_score': delete_max_score
             })
@@ -220,29 +229,32 @@ def append_if_not_ending(main_str, suffix):
     return main_str
 
 
-def extract_division_26_blocks(pdf_path):
+def extract_division_26_blocks(spec):
     section_26_blocks = set()
     section_26_blocks_df = []
-    doc = fitz.open(pdf_path)
+    doc = spec
 
     section_26_started = False
     current_sections = []
+    current_sections = {'text': [], 'quad': None, 'section': '260501'}  # Initialize as a dictionary
     for page_num in range(doc.page_count):
         page = doc.load_page(page_num)
         blocks = page.get_text("blocks")
 
         for block in blocks:
             text = block[4].strip()
+            current_sections['quad'] = block[:4]
+
             if text.startswith("PART") or text.startswith("DIVISION"):
-                current_sections = [text]
+                current_sections['text'] = [text]
             elif re.match(r"^\d+\.\d+", text):  # Matches sections like "2.1"
-                current_sections = current_sections[:1] + [text]
+                current_sections['text'] = current_sections['text'][:1] + [text]
             elif re.match(r"^[A-Z]\.", text):  # Matches subsections like "A."
-                current_sections = current_sections[:2] + [text]
+                current_sections['text'] = current_sections['text'][:2] + [text]
             elif re.match(r"^\d+\.", text):  # Matches numbered lists like "1."
-                current_sections = current_sections[:3] + [text]
+                current_sections['text'] = current_sections['text'][:3] + [text]
             elif re.match(r"^[a-z]\.", text):  # Matches lowercase subsections like "a."
-                current_sections = current_sections[:3] + [text]
+                current_sections['text'] = current_sections['text'][:3] + [text]
 
             if re.search(r"\bDIVISION\s*26\b", text, re.IGNORECASE) or re.match(r"^\s*26\b", text):
                 section_26_started = True
@@ -250,17 +262,16 @@ def extract_division_26_blocks(pdf_path):
                 section_26_started = False
 
             if section_26_started and append_if_not_ending(" > ".join(current_sections), text):
-                section_26_blocks.add(append_if_not_ending(" > ".join(current_sections), text))
+                section_26_blocks.add(('26051', str(current_sections['quad']), " > ".join(current_sections['text'])))
 
     return list(section_26_blocks)
 
 
-def extract_division_1_blocks(spec, section):
+def extract_division_1_blocks(spec, section, group):
     section_01_blocks = set()
     doc = spec
 
-
-    current_sections = []
+    current_sections = {'text': [], 'quad': None, 'section': section}  # Initialize as a dictionary
     for page_num in range(doc.page_count):
         page = doc.load_page(page_num)
 
@@ -274,18 +285,22 @@ def extract_division_1_blocks(spec, section):
             blocks = page.get_text("blocks")
             for block in blocks:
                 text = block[4].strip()
-                if text.startswith("PART") or text.startswith("DIVISION"):
-                    current_sections = [text]
-                elif re.match(r"^\d+\.\d+", text):  # Matches sections like "2.1"
-                    current_sections = current_sections[:1] + [text]
-                elif re.match(r"^[A-Z]\.", text):  # Matches subsections like "A."
-                    current_sections = current_sections[:2] + [text]
-                elif re.match(r"^\d+\.", text):  # Matches numbered lists like "1."
-                    current_sections = current_sections[:3] + [text]
-                elif re.match(r"^[a-z]\.", text):  # Matches lowercase subsections like "a."
-                    current_sections = current_sections[:3] + [text]
+                current_sections['quad'] = block[:4]  # Update the 'quad' key for each block
 
-                if append_if_not_ending(" > ".join(current_sections), text):
-                    section_01_blocks.add(append_if_not_ending(" > ".join(current_sections), text))
+                if text.startswith("PART") or text.startswith("DIVISION"):
+                    current_sections['text'] = [text]
+                elif re.match(r"^\d+\.\d+", text):  # Matches sections like "2.1"
+                    current_sections['text'] = current_sections['text'][:1] + [text]
+                elif re.match(r"^[A-Z]\.", text):  # Matches subsections like "A."
+                    current_sections['text'] = current_sections['text'][:2] + [text]
+                elif re.match(r"^\d+\.", text):  # Matches numbered lists like "1."
+                    current_sections['text'] = current_sections['text'][:3] + [text]
+                elif re.match(r"^[a-z]\.", text):  # Matches lowercase subsections like "a."
+                    current_sections['text'] = current_sections['text'][:3] + [text]
+
+                # Add the tuple of dictionary values to the set
+                if append_if_not_ending(" > ".join(current_sections['text']), text):
+                    section_01_blocks.add((current_sections['section'], group, str(current_sections['quad']), " > ".join(current_sections['text'])))
 
     return list(section_01_blocks)
+
