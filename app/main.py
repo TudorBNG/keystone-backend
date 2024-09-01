@@ -10,6 +10,8 @@ app = FastAPI(root_path="/")
 def read_root():
     return {"Welcome": "Welcome to the FastAPI on Lambda"}
 
+app.include_router(router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -17,8 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(router)
 
 handler = Mangum(app=app)
 
