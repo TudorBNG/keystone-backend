@@ -6,6 +6,10 @@ from router.api import router
 
 app = FastAPI(root_path="/")
 
+@app.get("/")
+def read_root():
+    return {"Welcome": "Welcome to the FastAPI on Lambda"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
