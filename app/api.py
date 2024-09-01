@@ -17,6 +17,8 @@ load_dotenv()
 
 router = APIRouter()
 
+os.environ['TRANSFORMERS_CACHE'] = './cache'
+
 # set the name of your bucket
 BUCKET = os.environ.get('BUCKET') or "keystone-bucket"
 
