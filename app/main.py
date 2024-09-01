@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
 
-from router.api import router
+from api import router
 
-app = FastAPI(root_path="/")
+app = FastAPI()
 
 @app.get("/")
 def read_root():

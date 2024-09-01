@@ -9,9 +9,9 @@ from typing import Dict
 from dotenv import load_dotenv
 import os
 
-from services.helper import find_sections_in_page, sections_parser
+from helper import find_sections_in_page, sections_parser
 
-from services.spec_handler import extract_keys_from_spec
+from spec_handler import extract_keys_from_spec
 
 load_dotenv()
 
