@@ -12,4 +12,4 @@ RUN pip3 install mangum --target "${LAMBDA_TASK_ROOT}"
  
 COPY ./requirements.txt ./requirements.txt
 RUN pip install -r ./requirements.txt
-CMD ["main.handler"]
+CMD ["app.main.handler"]

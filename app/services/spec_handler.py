@@ -1,6 +1,6 @@
 import pandas as pd
 
-from services.helper import normalize_section, get_section_index, get_test_data_from_spec, parse_data
+from app.services.helper import normalize_section, get_section_index, get_test_data_from_spec, parse_data
 
 from sentence_transformers import SentenceTransformer
 
