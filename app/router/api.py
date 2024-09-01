@@ -15,7 +15,7 @@ from services.spec_handler import extract_keys_from_spec
 
 load_dotenv()
 
-router = APIRouter()
+router = APIRouter(prefix='/api')
 
 # set the name of your bucket
 BUCKET = os.environ.get('BUCKET') or "keystone-bucket"
