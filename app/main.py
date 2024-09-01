@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from mangum import Mangum
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
 from router.api import router
 
