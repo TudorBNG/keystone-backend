@@ -1,15 +1,15 @@
 FROM public.ecr.aws/lambda/python:3.11
-
-COPY ./app ${LAMBDA_TASK_ROOT}
-
-
-ENV LD_PRELOAD='/var/lang/lib/python3.11/site-packages/sklearn/utils/../../scikit_learn.libs/libgomp-d22c30c5.so.1.0.0'
-
-# Copy requirements.txt
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
-
-# Install the specified packages
-RUN pip install --default-timeout=1000 -r requirements.txt
-
-# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-CMD [ "main.handler" ]
+COPY . ${LAMBDA_TASK_ROOT}
+WORKDIR /app
+ARG DEBIAN_FRONTEND=noninteractive
+ 
+RUN yum update -y
+RUN yum update -y python3 curl libcom_err ncurses expat libblkid libuuid libmount
+RUN yum install ffmpeg libsm6 libxext6 python3-pip git -y
+ 
+RUN pip3 install fastapi --target "${LAMBDA_TASK_ROOT}"
+RUN pip3 install mangum --target "${LAMBDA_TASK_ROOT}"
+ 
+COPY ./requirements.txt ./requirements.txt
+RUN pip install -r ./requirements.txt
+CMD ["main.handler"]
