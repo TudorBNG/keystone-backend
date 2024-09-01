@@ -22,6 +22,10 @@ BUCKET = os.environ.get('BUCKET') or "keystone-bucket"
 
 s3 = boto3.client('s3')
 
+@router.get("/")
+async def index_root():
+    return {"message": "Hello!"}
+
 @router.post("/presigned-url")
 async def create_presigned_url(user: str, filename: str, method: str) -> Dict[str, str]:
     path = f"{user}/specs/{filename}"
