@@ -15,7 +15,7 @@ app.include_router(router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["https://feature-keystone-mvp-4-updated.d3e6q259g71cvx.amplifyapp.com/"],
+    allow_origins=["https://feature-keystone-mvp-4-updated.d3e6q259g71cvx.amplifyapp.com"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
