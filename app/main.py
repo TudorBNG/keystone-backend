@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from mangum import Mangum
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from router.api import router
 
@@ -15,7 +15,7 @@ app.include_router(router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=['*'],
+    allow_origins=["https://feature-keystone-mvp-4-updated.d3e6q259g71cvx.amplifyapp.com/"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
